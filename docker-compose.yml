@@ -1,18 +1,27 @@
-version: '3'
+version: "3.7"
 
 services:
   neo4j:
-    build: ./neo4j
+    container_name: gsex_neo4j
+    image: neo4j:4.3.2
+    restart: always
+    hostname: neo4j
     ports:
       - 7474:7474
       - 7687:7687
+    volumes:
+      - neo4j_data:/data
+      - neo4j_import:/import
     environment:
-      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_AUTH=neo4j/letmein
+      - NEO4JLABS_PLUGINS=["apoc", "graph-data-science"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
       - NEO4J_apoc_import_file_enabled=true
       - NEO4J_apoc_export_file_enabled=true
-      - NEO4J_dbms_shell_enabled=true
+      - SECURE_FILE_PERMISSIONS=yes
 
   api:
+    container_name: gsex_api
     build: ./api
     ports:
       - 4001:4001
@@ -22,13 +31,13 @@ services:
       - NEO4J_PASSWORD=letmein
       - GRAPHQL_LISTEN_PORT=4001
       - GRAPHQL_URI=http://api:4001/graphql
-
     links:
       - neo4j
     depends_on:
       - neo4j
 
   ui:
+    container_name: gsex_ui
     build: ./web-react
     ports:
       - 3000:3000
@@ -40,3 +49,10 @@ services:
       - api
     depends_on:
       - api
+
+volumes:
+  neo4j_data:
+    name: gsex_neo4j_data
+  neo4j_import:
+    name: gsex_neo4j_import
+
